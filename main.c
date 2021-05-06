@@ -5,8 +5,7 @@
 #define MAX_SUB_COMMANDS 5
 #define MAX_ARGS 10
 
-//****************************HOMEWORK THREE***********************************
-
+//****************************HOMEWORK THREEE***********************************
 struct SubCommand{
 	char *line;
 	char *argv[MAX_ARGS];
@@ -15,9 +14,6 @@ struct SubCommand{
 struct Command{
 	struct SubCommand sub_commands[MAX_SUB_COMMANDS];
 	int num_sub_commands;
-	char *stdin_redirect;
-	char *stdout_redirect;
-	int background;
 };
 
 void ReadArgs(char *in, char **argv, int size){
@@ -88,7 +84,7 @@ void ReadRedirectsAndBackground(struct Command *command)
 {
 	command->stdin_redirect, command->stdout_redirect = NULL; // initialize stdin_redidrect and stdout_redirect to NULL
 	command->background = 0; // initialize background to anything other than 1 (i.e. 0)
-	int i, j = 0; // initialize counters	
+	int i, j = 0; // initialize counters
 	for(i = command->num_sub_commands - 1; i >= 0; i--)
 	{
 		//printf("Iteration #%d of outer loop\n", i+1);
@@ -135,7 +131,7 @@ void PrintCommand(struct Command *command)
 	// Begin additions for HW4:
 
 	printf("\n");
-	
+
 	if(!(strcmp(command->stdin_redirect, "\0") == 0)) // stdin_redirect handler
 	{
 		printf("Redirect stdin: %s\n", command->stdin_redirect);
@@ -154,19 +150,24 @@ void PrintCommand(struct Command *command)
 	}
 }
 
-int main()
-{
+//what the shell prints
+//infinite while loop with one break condition (if the shell command is 'exit')
+int main(int argc, char **argv){
 	struct Command command;
 	char s[200];
 	char *argv[10];
 
-	printf("Enter command: ");
 	fgets(s, sizeof s, stdin);
 	s[strlen(s) - 1] = '\0';
-
 	ReadCommand(s, &command);
 	ReadRedirectsAndBackground(&command);
 	PrintCommand(&command);
 
 	return 0;
+	//print $ everysingle time
+	while (1){
+		printf("$ ");
+		//support for for everything else
+	}
+
 }
