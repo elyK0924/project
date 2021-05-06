@@ -79,16 +79,6 @@ void ReadCommand(char *line, struct Command *command){
 		ReadArgs(command->sub_commands[i].line, command->sub_commands[i].argv, MAX_ARGS);
 	}
 }
-void PrintCommand(struct Command *command){
-	//prints all args for subcommands of the command passed
-	//internally call print args
-	int i = 0;
-	int num = command->num_sub_commands;
-	for (i = 0; i < num; i++){
-		PrintArgs(command->sub_commands[i].argv);
-	}
-
-}
 
 
 //************HOMEWORK 3***********************************************
