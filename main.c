@@ -15,6 +15,9 @@ struct SubCommand{
 struct Command{
 	struct SubCommand sub_commands[MAX_SUB_COMMANDS];
 	int num_sub_commands;
+	char *stdin_redirect;
+	char *stdout_redirect;
+	int background;
 };
 
 void ReadArgs(char *in, char **argv, int size){
