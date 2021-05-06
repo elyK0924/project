@@ -5,7 +5,7 @@
 #define MAX_SUB_COMMANDS 5
 #define MAX_ARGS 10
 
-//****************************HOMEWORK THREEE***********************************
+//****************************HOMEWORK THREE***********************************
 
 struct SubCommand{
 	char *line;
@@ -90,3 +90,90 @@ void PrintCommand(struct Command *command){
 
 //************HOMEWORK 3***********************************************
 //************************HOMEWORK 4***********************************
+
+void ReadRedirectsAndBackground(struct Command *command)
+{
+	command->stdin_redirect, command->stdout_redirect = NULL; // initialize stdin_redidrect and stdout_redirect to NULL
+	command->background = 0; // initialize background to anything other than 1 (i.e. 0)
+	int i, j = 0; // initialize counters	
+	for(i = command->num_sub_commands - 1; i >= 0; i--)
+	{
+		//printf("Iteration #%d of outer loop\n", i+1);
+		for(j = 0; command->sub_commands[i].argv[j] != NULL; j++)
+		{
+			//printf("Iteration #%d of inner loop\n", j+1);
+			//printf("command->sub_commands[%d].argv[%d] = '%s'\n", i, j, command->sub_commands[i].argv[j]);
+			if(strcmp(command->sub_commands[i].argv[j], "<") == 0)
+			{
+				//printf("FOUND STDIN_REDIRECT @ command->sub_commands[%d].argv[%d]\tNEXT ELEMENT = %s\n", i, j, command->sub_commands[i].argv[j+1]);
+				command->stdin_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
+				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
+			}
+			else if(strcmp(command->sub_commands[i].argv[j], ">") == 0)
+			{
+				//printf("FOUND STDOUT_RIDRECT @ command->sub_commands[%d].argv[%d]\tNEXT ELEMENT = %s\n", i, j, command->sub_commands[i].argv[j + 1]);
+				command->stdout_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
+				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
+			}
+			else if(strcmp(command->sub_commands[i].argv[j], "&") == 0)
+			{
+				//printf("FOUND BACKGROUND SYMBOL @ command->sub_commands[%d].argv[%d]\n", i, j);
+				command->background = 1; // set background to the "yes" value (i.e. 1)
+				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
+			}
+		}
+	}
+	return;
+}
+
+
+void PrintCommand(struct Command *command)
+{
+	int i = 0;
+	//printf("command->num_sub_commands = %d\n", num);
+	//printf("Enter PrintCommand while\n");
+	while(i < command->num_sub_commands)
+	{
+		printf("Command %d:\n", i + 1);
+		PrintArgs(command->sub_commands[i].argv);
+		i++;
+	}
+
+	// Begin additions for HW4:
+
+	printf("\n");
+	
+	if(!(strcmp(command->stdin_redirect, "\0") == 0)) // stdin_redirect handler
+	{
+		printf("Redirect stdin: %s\n", command->stdin_redirect);
+	}
+	if(!(strcmp(command->stdout_redirect, "\0") == 0)) // stdout_redirect handler
+	{
+		printf("Redirect stdout: %s\n", command->stdout_redirect);
+	}
+	if(command->background == 1) // background handler
+	{
+		printf("Background: yes\n");
+	}
+	else // if command->background != 1
+	{
+		printf("Background: no\n");
+	}
+}
+
+int main()
+{
+	struct Command command;
+	char s[200];
+	char *argv[10];
+
+	printf("Enter command: ");
+	fgets(s, sizeof s, stdin);
+	s[strlen(s) - 1] = '\0';
+
+	ReadCommand(s, &command);
+	ReadRedirectsAndBackground(&command);
+	PrintCommand(&command);
+
+	return 0;
+}
