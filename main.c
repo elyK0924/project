@@ -160,13 +160,16 @@ int main()
 	char s[200];
 	char *argv[10];
 
-	printf("Enter command: ");
-	fgets(s, sizeof s, stdin);
-	s[strlen(s) - 1] = '\0';
+	while(1)
+	{
 
-	ReadCommand(s, &command);
-	ReadRedirectsAndBackground(&command);
-	PrintCommand(&command);
+		printf("$ ");
+		fgets(s, sizeof s, stdin);
+		s[strlen(s) - 1] = '\0';
 
+		ReadCommand(s, &command);
+		ReadRedirectsAndBackground(&command);
+		PrintCommand(&command);
+	}
 	return 0;
 }
