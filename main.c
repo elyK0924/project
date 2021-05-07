@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h> // for PATH_MAX
 #include <string.h>
 #include <stdlib.h>
 #define MAX_SUB_COMMANDS 5
@@ -153,8 +154,8 @@ int main(){
 	char *argv[10];
 	while(1)
 	{
-
-		printf("$ ");
+		char cwd[PATH_MAX];
+		printf("%s$ ", getcwd(cwd, sizeof(cwd)));
 		fgets(s, sizeof s, stdin);
 		s[strlen(s) - 1] = '\0';
 		ReadCommand(s, &command);
