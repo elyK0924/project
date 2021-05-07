@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -14,6 +16,9 @@ struct SubCommand{
 struct Command{
 	struct SubCommand sub_commands[MAX_SUB_COMMANDS];
 	int num_sub_commands;
+	char* stdin_redirect;
+	char* stdout_redirect;
+	int background;
 };
 
 void ReadArgs(char *in, char **argv, int size){
@@ -76,7 +81,11 @@ void ReadCommand(char *line, struct Command *command){
 	}
 }
 
+void LS(){
 
+	
+
+}
 //************HOMEWORK 3***********************************************
 //************************HOMEWORK 4***********************************
 
@@ -150,9 +159,141 @@ void PrintCommand(struct Command *command)
 	}
 }
 
+void *LS_LCommand(int argc, char **argv){
+	int ret = fork();
+	if (ret < 0){
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+
+	}
+
+	else if (ret == 0){
+		//close default standard output 
+		close(1);
+
+		//redirect output 
+		int fd = open(argv[3], O_WRONLY | O_CREAT, 0660); 
+		if (fd < 0){
+			fprintf(stderr, "cannot open %s", argv[3]);
+			exit(1);
+		}
+
+		//Launch command ls -l
+		char *myargs[3];
+		myargs[0] = "ls";
+		myargs[1] = "-l";
+		myargs[2] = NULL;
+		execvp(myargs[0], myargs);
+		printf("This is unreachable code");
+	}
+	else{
+		int w = wait(NULL);
+	}
+
+	return 0; 
+
+}
+
+void *WCComand(int argc, char **argv){
+	int ret = fork();
+	if (ret < 0){
+		fprintf(stderr, "forkfailed\n");
+		exit(1);
+
+	}
+	else if (ret == 0){
+		//close default standard output 
+		close(0);
+
+		//Redirect output to argv[3]
+		int fd = open(argv[3], O_RDONLY);
+		if (fd < 0){
+			fprintf(stderr, "cannot open %s", argv[3]);
+		}
+
+		//launch command "wc"
+		char *myargs[2]; 
+		myargs[0] = "wc";
+		myargs[1] = NULL; 
+		execvp(myargs[0], myargs);
+		printf("this is unreachable code");
+	}
+	else{
+		int w = wait(NULL);
+	}
+
+	return 0; 
+
+}
+
+int LSLWCCommand(int argc, char *argv){
+	//create pipe 
+	int fds[2]; 
+	int err = pipe(fds);
+
+	if (err == -1){
+		perror("pipe");
+		return 1;
+	}
+
+	//spawn child 
+	int ret = fork();
+	if (ret < 0){
+		perror("fork");
+		return 1;
+	}
+	else if (ret == 0){
+		//close
+		close(fds[1]);
+
+		//Duplicate read end of pipe in standard input 
+		close(0);
+		dup(fds[0]);
+
+		//child launches command "wc"
+		char *argv[2];
+		argv[0] = "wc";
+		argv[1] = NULL; 
+		execvp(argv[0], argv);
+	}
+
+	else{
+
+		//close read end of pipe 
+		close(fds[0]);
+
+		//duplicate write end of pipe in standard output 
+		close(1);
+		dup(fds[1]);
+
+		//Parent launches command "ls -l"
+		char *argv[3];
+		argv[0] = "ls";
+		argv[1] = "-l";
+		argv[2] = NULL;
+		execvp(argv[0], argv);
+	}
+
+	return 0; 
+
+}
+
+void* ShellCommandProcessing(int argc, char **argv, struct *Command command){
+	int i; 
+
+	//for loop that reads all the arguments 
+	for (i=0; i<argc; i++){
+		//ls and ls -l commands 
+		if (strcmp(argv[0], "ls")==0)
+	
+	}
+
+
+}
+
 //what the shell prints
 //infinite while loop with one break condition (if the shell command is 'exit')
-int main(int argc, char **argv){
+int main(){
 	struct Command command;
 	char s[200];
 	char *argv[10];
@@ -168,6 +309,9 @@ int main(int argc, char **argv){
 	while (1){
 		printf("$ ");
 		//support for for everything else
+
 	}
 
 }
+
+
