@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h> // for PATH_MAX
 #include <string.h>
 #include <stdlib.h>
 #define MAX_SUB_COMMANDS 5
 #define MAX_ARGS 10
 
-//****************************HOMEWORK THREE***********************************
-
+//****************************HOMEWORK THREEE***********************************
 struct SubCommand{
 	char *line;
 	char *argv[MAX_ARGS];
@@ -41,7 +41,7 @@ void ReadArgs(char *in, char **argv, int size){
 void PrintArgs(char **argv){
 	int i = 0;
 	while (argv[i] != NULL){
-		printf("argv[%d] = %s\n", i, argv[i]);
+		printf("\targv[%d] = %s\n", i, argv[i]);
 		i++;
 	}
 
@@ -86,31 +86,28 @@ void ReadCommand(char *line, struct Command *command){
 
 void ReadRedirectsAndBackground(struct Command *command)
 {
-	command->stdin_redirect, command->stdout_redirect = NULL; // initialize stdin_redidrect and stdout_redirect to NULL
+	command->stdin_redirect = "\0";
+	command->stdout_redirect = "\0"; // initialize stdin_redidrect and stdout_redirect to NULL
 	command->background = 0; // initialize background to anything other than 1 (i.e. 0)
-	int i, j = 0; // initialize counters	
+	int i, j = 0; // initialize counters
 	for(i = command->num_sub_commands - 1; i >= 0; i--)
 	{
-		//printf("Iteration #%d of outer loop\n", i+1);
 		for(j = 0; command->sub_commands[i].argv[j] != NULL; j++)
 		{
-			//printf("Iteration #%d of inner loop\n", j+1);
-			//printf("command->sub_commands[%d].argv[%d] = '%s'\n", i, j, command->sub_commands[i].argv[j]);
 			if(strcmp(command->sub_commands[i].argv[j], "<") == 0)
 			{
-				//printf("FOUND STDIN_REDIRECT @ command->sub_commands[%d].argv[%d]\tNEXT ELEMENT = %s\n", i, j, command->sub_commands[i].argv[j+1]);
 				command->stdin_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
+				printf("input redirect file = %s\n", command->stdin_redirect);
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
 			else if(strcmp(command->sub_commands[i].argv[j], ">") == 0)
 			{
-				//printf("FOUND STDOUT_RIDRECT @ command->sub_commands[%d].argv[%d]\tNEXT ELEMENT = %s\n", i, j, command->sub_commands[i].argv[j + 1]);
 				command->stdout_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
+				printf("output redirect file = %s\n", command->stdout_redirect);
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
 			else if(strcmp(command->sub_commands[i].argv[j], "&") == 0)
 			{
-				//printf("FOUND BACKGROUND SYMBOL @ command->sub_commands[%d].argv[%d]\n", i, j);
 				command->background = 1; // set background to the "yes" value (i.e. 1)
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
@@ -123,8 +120,6 @@ void ReadRedirectsAndBackground(struct Command *command)
 void PrintCommand(struct Command *command)
 {
 	int i = 0;
-	//printf("command->num_sub_commands = %d\n", num);
-	//printf("Enter PrintCommand while\n");
 	while(i < command->num_sub_commands)
 	{
 		printf("Command %d:\n", i + 1);
@@ -132,15 +127,13 @@ void PrintCommand(struct Command *command)
 		i++;
 	}
 
-	// Begin additions for HW4:
-
 	printf("\n");
-	
-	if(!(strcmp(command->stdin_redirect, "\0") == 0)) // stdin_redirect handler
+
+	if(strcmp(command->stdin_redirect, "\0") != 0) // stdin_redirect handler
 	{
 		printf("Redirect stdin: %s\n", command->stdin_redirect);
 	}
-	if(!(strcmp(command->stdout_redirect, "\0") == 0)) // stdout_redirect handler
+	if(strcmp(command->stdout_redirect, "\0") != 0) // stdout_redirect handler
 	{
 		printf("Redirect stdout: %s\n", command->stdout_redirect);
 	}
@@ -154,22 +147,19 @@ void PrintCommand(struct Command *command)
 	}
 }
 
-int main()
-{
+int main(){	
+	
 	struct Command command;
 	char s[200];
 	char *argv[10];
-
 	while(1)
 	{
-
-		printf("$ ");
+		char cwd[PATH_MAX];
+		printf("%s$ ", getcwd(cwd, sizeof(cwd)));
 		fgets(s, sizeof s, stdin);
 		s[strlen(s) - 1] = '\0';
-
 		ReadCommand(s, &command);
 		ReadRedirectsAndBackground(&command);
 		PrintCommand(&command);
 	}
-	return 0;
 }
