@@ -157,12 +157,25 @@ int main(int argc, char **argv){
 	char s[200];
 	char *argv[10];
 
+<<<<<<< HEAD
 	fgets(s, sizeof s, stdin);
 	s[strlen(s) - 1] = '\0';
 	ReadCommand(s, &command);
 	ReadRedirectsAndBackground(&command);
 	PrintCommand(&command);
+=======
+	while(1)
+	{
 
+		printf("$ ");
+		fgets(s, sizeof s, stdin);
+		s[strlen(s) - 1] = '\0';
+>>>>>>> new
+
+		ReadCommand(s, &command);
+		ReadRedirectsAndBackground(&command);
+		PrintCommand(&command);
+	}
 	return 0;
 	//print $ everysingle time
 	while (1){
