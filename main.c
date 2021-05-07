@@ -153,8 +153,7 @@ void PrintCommand(struct Command *command)
 	}
 }
 
-int main(){
-	
+int main(){	
 	struct Command command;
 	char s[200];
 	char *argv[10];
