@@ -40,7 +40,7 @@ void ReadArgs(char *in, char **argv, int size){
 void PrintArgs(char **argv){
 	int i = 0;
 	while (argv[i] != NULL){
-		printf("argv[%d] = %s\n", i, argv[i]);
+		printf("\targv[%d] = %s\n", i, argv[i]);
 		i++;
 	}
 
@@ -85,7 +85,8 @@ void ReadCommand(char *line, struct Command *command){
 
 void ReadRedirectsAndBackground(struct Command *command)
 {
-	command->stdin_redirect, command->stdout_redirect = NULL; // initialize stdin_redidrect and stdout_redirect to NULL
+	command->stdin_redirect = "\0";
+	command->stdout_redirect = "\0"; // initialize stdin_redidrect and stdout_redirect to NULL
 	command->background = 0; // initialize background to anything other than 1 (i.e. 0)
 	int i, j = 0; // initialize counters
 	for(i = command->num_sub_commands - 1; i >= 0; i--)
@@ -95,11 +96,13 @@ void ReadRedirectsAndBackground(struct Command *command)
 			if(strcmp(command->sub_commands[i].argv[j], "<") == 0)
 			{
 				command->stdin_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
+				printf("input redirect file = %s\n", command->stdin_redirect);
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
 			else if(strcmp(command->sub_commands[i].argv[j], ">") == 0)
 			{
 				command->stdout_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
+				printf("output redirect file = %s\n", command->stdout_redirect);
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
 			else if(strcmp(command->sub_commands[i].argv[j], "&") == 0)
@@ -109,7 +112,7 @@ void ReadRedirectsAndBackground(struct Command *command)
 			}
 		}
 	}
-	return NULL;
+	return;
 }
 
 
@@ -125,11 +128,11 @@ void PrintCommand(struct Command *command)
 
 	printf("\n");
 
-	if(!(strcmp(command->stdin_redirect, "\0") == 0)) // stdin_redirect handler
+	if(strcmp(command->stdin_redirect, "\0") != 0) // stdin_redirect handler
 	{
 		printf("Redirect stdin: %s\n", command->stdin_redirect);
 	}
-	if(!(strcmp(command->stdout_redirect, "\0") == 0)) // stdout_redirect handler
+	if(strcmp(command->stdout_redirect, "\0") != 0) // stdout_redirect handler
 	{
 		printf("Redirect stdout: %s\n", command->stdout_redirect);
 	}
