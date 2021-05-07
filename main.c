@@ -14,6 +14,9 @@ struct SubCommand{
 struct Command{
 	struct SubCommand sub_commands[MAX_SUB_COMMANDS];
 	int num_sub_commands;
+	char *stdin_redirect;
+	char *stdout_redirect;
+	int background;
 };
 
 void ReadArgs(char *in, char **argv, int size){
@@ -150,37 +153,19 @@ void PrintCommand(struct Command *command)
 	}
 }
 
-//what the shell prints
-//infinite while loop with one break condition (if the shell command is 'exit')
-int main(int argc, char **argv){
+int main(){
+	
 	struct Command command;
 	char s[200];
 	char *argv[10];
-
-<<<<<<< HEAD
-	fgets(s, sizeof s, stdin);
-	s[strlen(s) - 1] = '\0';
-	ReadCommand(s, &command);
-	ReadRedirectsAndBackground(&command);
-	PrintCommand(&command);
-=======
 	while(1)
 	{
 
 		printf("$ ");
 		fgets(s, sizeof s, stdin);
 		s[strlen(s) - 1] = '\0';
->>>>>>> new
-
 		ReadCommand(s, &command);
 		ReadRedirectsAndBackground(&command);
 		PrintCommand(&command);
 	}
-	return 0;
-	//print $ everysingle time
-	while (1){
-		printf("$ ");
-		//support for for everything else
-	}
-
 }
