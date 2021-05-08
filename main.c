@@ -97,13 +97,13 @@ void ReadRedirectsAndBackground(struct Command *command)
 			if(strcmp(command->sub_commands[i].argv[j], "<") == 0)
 			{
 				command->stdin_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
-				printf("input redirect file = %s\n", command->stdin_redirect);
+				//printf("input redirect file = %s\n", command->stdin_redirect);
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
 			else if(strcmp(command->sub_commands[i].argv[j], ">") == 0)
 			{
 				command->stdout_redirect = command->sub_commands[i].argv[j + 1]; // expected: file name
-				printf("output redirect file = %s\n", command->stdout_redirect);
+				//printf("output redirect file = %s\n", command->stdout_redirect);
 				command->sub_commands[i].argv[j] = NULL; // remove symbol from args
 			}
 			else if(strcmp(command->sub_commands[i].argv[j], "&") == 0)
@@ -122,7 +122,7 @@ void PrintCommand(struct Command *command)
 	int i = 0;
 	while(i < command->num_sub_commands)
 	{
-		printf("Command %d:\n", i + 1);
+		printf("Subcommand %d:\n", i + 1);
 		PrintArgs(command->sub_commands[i].argv);
 		i++;
 	}
@@ -147,6 +147,26 @@ void PrintCommand(struct Command *command)
 	}
 }
 
+void ExecuteCommands(struct Command *command)
+{
+/*
+ * Will likely try to make this a recursive solution
+ */
+	if(command->num_sub_commands > 1) // i.e. if there is a pipe
+	{
+		int pipes[(command->num_sub_commands - 1)];
+		int fds[2];
+	}
+
+	int i = command->num_sub_commands;
+	int j = 0;
+
+	for (i = command->num_sub_commands; i >= 0; i--)
+	{
+		execvp(command->sub_commands[i].argv[0], command->sub_commands[i].argv);
+	}
+}
+
 int main(){	
 	
 	struct Command command;
@@ -157,9 +177,13 @@ int main(){
 		char cwd[PATH_MAX];
 		printf("%s$ ", getcwd(cwd, sizeof(cwd)));
 		fgets(s, sizeof s, stdin);
-		s[strlen(s) - 1] = '\0';
 		ReadCommand(s, &command);
 		ReadRedirectsAndBackground(&command);
 		PrintCommand(&command);
+		ExecuteCommands(&command);
 	}
 }
+
+
+
+
