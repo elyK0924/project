@@ -147,24 +147,114 @@ void PrintCommand(struct Command *command)
 	}
 }
 
-void ExecuteCommands(struct Command *command)
+void ExecutePiped(struct Command *command)
 {
-/*
- * Will likely try to make this a recursive solution
- */
-	if(command->num_sub_commands > 1) // i.e. if there is a pipe
-	{
-		int pipes[(command->num_sub_commands - 1)];
-		int fds[2];
-	}
+	int fds[2];
+	pid_t child1, child2;
 
-	int i = command->num_sub_commands;
-	int j = 0;
-
-	for (i = command->num_sub_commands; i >= 0; i--)
+	int ret = pipe(fds);
+	if (ret < 0)
 	{
-		execvp(command->sub_commands[i].argv[0], command->sub_commands[i].argv);
+		perror("pipe");
+		exit(1);
 	}
+	child1 = fork();
+	if(child1 < 0)
+	{
+		perror("child1 fork");
+		exit(1);
+	}
+	else if(child1 == 0) //child 1
+	{
+		close(fds[0]);
+		close(1);
+		dup(fds[1]);
+		close(fds[1]);
+
+		execvp(command->sub_commands[0].argv[0], command->sub_commands[0].argv);
+	}
+	else{
+		child2 = fork();
+		if(child2 < 0)
+		{
+			perror("child2 fork");
+			exit(1);
+		}
+		else if(child2 == 0) //child2
+		{
+			close(fds[1]);
+			close(0);
+			dup(fds[0]);
+			close(fds[0]);
+
+			execvp(command->sub_commands[1].argv[0], command->sub_commands[1].argv);
+		}
+		else
+		{
+			close(fds[0]);
+			close(fds[1]);
+			if(command->background == 1)
+			{
+				printf("[%d]\n", child2);
+				return;
+			}
+			else
+			{
+				int w1 = wait(NULL);
+				int w2 = wait(NULL);
+				if(w1 && w2) return;
+			}
+		}
+	}
+}
+
+void ExecuteNotPiped(struct Command *command)
+{
+	pid_t pid;
+
+	pid = fork();
+	if(pid < 0)
+	{
+		perror("fork");
+	}
+	else if(pid == 0)
+	{
+		execvp(command->sub_commands[0].argv[0], command->sub_commands[0].argv);
+	}
+	else
+	{
+		if(command->background == 1)
+		{
+			printf("[%d]\n", pid);
+			return;
+		}
+		else
+		{
+			wait(pid);
+			return;
+		}
+	}
+}
+
+void CommandHandler(struct Command *command)
+{
+	int num_pipes = command->num_sub_commands - 1;
+	if (num_pipes > 0)
+	{
+		//printf("NOTE: execute piped\n");
+		ExecutePiped(command);
+	}
+	else
+	{
+		//printf("NOTE: execute not piped\n");
+		ExecuteNotPiped(command);
+	}
+	return;
+}
+
+void ResetCommand(struct Command *command)
+{
+	 
 }
 
 int main(){	
@@ -179,9 +269,10 @@ int main(){
 		fgets(s, sizeof s, stdin);
 		ReadCommand(s, &command);
 		ReadRedirectsAndBackground(&command);
-		PrintCommand(&command);
-		ExecuteCommands(&command);
+		//PrintCommand(&command);
+		CommandHandler(&command);
 	}
+	return 0;
 }
 
 
