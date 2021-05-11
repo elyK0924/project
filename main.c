@@ -112,7 +112,6 @@ void ReadRedirectsAndBackground(struct Command *command)
 	return;
 }
 
-
 void PrintCommand(struct Command *command)
 {
 	int i = 0;
@@ -142,7 +141,6 @@ void PrintCommand(struct Command *command)
 		printf("Background: no\n");
 	}
 }
-
 
 void ExecutePiped(struct Command *command, int starting_subcmd)
 {
@@ -187,7 +185,10 @@ void ExecutePiped(struct Command *command, int starting_subcmd)
 			dup2(fd1, 1);
 			close(fd1);
 		}
-		execvp(command->sub_commands[starting_subcmd].argv[0], command->sub_commands[starting_subcmd].argv);
+		if(execvp(command->sub_commands[starting_subcmd].argv[0], command->sub_commands[starting_subcmd].argv) < 0)
+		{
+			printf("%s: Command not found\n", command->sub_commands[starting_subcmd].argv[0]);
+		}
 	}
 	else{ // back to parent
 		child2 = fork(); // spawn second child
@@ -225,7 +226,10 @@ void ExecutePiped(struct Command *command, int starting_subcmd)
 				dup2(fd3, 1);
 				close(fd3);
 			}	
-			execvp(command->sub_commands[starting_subcmd + 1].argv[0], command->sub_commands[starting_subcmd + 1].argv);
+			if(execvp(command->sub_commands[starting_subcmd + 1].argv[0], command->sub_commands[starting_subcmd + 1].argv) < 0)
+			{
+				printf("%s: Command not found.\n", command->sub_commands[starting_subcmd + 1].argv[0]);
+			}
 		}
 		else // back to parent
 		{
@@ -280,7 +284,10 @@ void ExecuteNotPiped(struct Command *command)
 			dup2(fd1, 1);
 			close(fd1);
 		}
-		execvp(command->sub_commands[0].argv[0], command->sub_commands[0].argv);
+		if(execvp(command->sub_commands[0].argv[0], command->sub_commands[0].argv) < 0)
+		{
+			printf("%s: Command not found.\n", command->sub_commands[0].argv[0]);
+		}
 	}
 	else
 	{
