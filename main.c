@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <limits.h> // for PATH_MAX
+#include <limits.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #define MAX_SUB_COMMANDS 5
 #define MAX_ARGS 10
 
-//****************************HOMEWORK THREEE***********************************
 struct SubCommand{
 	char *line;
 	char *argv[MAX_ARGS];
@@ -80,10 +80,6 @@ void ReadCommand(char *line, struct Command *command){
 	}
 }
 
-
-//************HOMEWORK 3***********************************************
-//************************HOMEWORK 4***********************************
-
 void ReadRedirectsAndBackground(struct Command *command)
 {
 	command->stdin_redirect = "\0";
@@ -147,51 +143,93 @@ void PrintCommand(struct Command *command)
 	}
 }
 
-void ExecutePiped(struct Command *command)
-{
-	int fds[2];
-	pid_t child1, child2;
 
-	int ret = pipe(fds);
-	if (ret < 0)
+void ExecutePiped(struct Command *command, int starting_subcmd)
+{
+	int fds[2]; // initializing pipe's file descriptors 
+	pid_t child1, child2; // initialize children
+
+	int ret = pipe(fds); // captures return value from pipe()
+	if (ret < 0) // pipe error
 	{
 		perror("pipe");
-		exit(1);
 	}
-	child1 = fork();
-	if(child1 < 0)
+	
+	child1 = fork(); // spawn first child
+	if(child1 < 0) // fork error
 	{
 		perror("child1 fork");
-		exit(1);
 	}
 	else if(child1 == 0) //child 1
 	{
+		// Close read end and dup write end
 		close(fds[0]);
 		close(1);
 		dup(fds[1]);
 		close(fds[1]);
-
-		execvp(command->sub_commands[0].argv[0], command->sub_commands[0].argv);
+		if(command->stdin_redirect != "\0")
+		{
+			int fd0 = open(command->stdin_redirect, O_RDONLY, 0);
+			if(fd0 < 0)
+			{
+				perror("Could not open input file.");
+			}
+			dup2(fd0, 0);
+			close(fd0);
+		}
+		if(command->stdout_redirect != "\0")
+		{
+			int fd1 = creat(command->stdout_redirect, 0644);
+			if(fd1 < 0)
+			{
+				perror("Could not open output file.");
+			}
+			dup2(fd1, 1);
+			close(fd1);
+		}
+		execvp(command->sub_commands[starting_subcmd].argv[0], command->sub_commands[starting_subcmd].argv);
 	}
-	else{
-		child2 = fork();
-		if(child2 < 0)
+	else{ // back to parent
+		child2 = fork(); // spawn second child
+		if(child2 < 0) // fork error
 		{
 			perror("child2 fork");
 			exit(1);
 		}
 		else if(child2 == 0) //child2
 		{
+			// Close write end and dup read end
 			close(fds[1]);
 			close(0);
 			dup(fds[0]);
 			close(fds[0]);
-
-			execvp(command->sub_commands[1].argv[0], command->sub_commands[1].argv);
+			if(command->stdin_redirect != "\0")
+			{
+				int fd2 = open(command->stdin_redirect, O_RDONLY, 0);
+				if(fd2 < 0)
+				{
+					perror("Could not open input file.");
+					exit(0);
+				}
+				dup2(fd2, 0);
+				close(fd2);
+			}
+			if(command->stdout_redirect != "\0")
+			{
+				int fd3 = creat(command->stdout_redirect, 0644);
+				if(fd3 < 0)
+				{
+					perror("Could not open output file.");
+					exit(0);
+				}
+				dup2(fd3, 1);
+				close(fd3);
+			}	
+			execvp(command->sub_commands[starting_subcmd + 1].argv[0], command->sub_commands[starting_subcmd + 1].argv);
 		}
-		else
+		else // back to parent
 		{
-			close(fds[0]);
+			close(fds[0]); // close unneeded file descriptors
 			close(fds[1]);
 			if(command->background == 1)
 			{
@@ -200,11 +238,11 @@ void ExecutePiped(struct Command *command)
 			}
 			else
 			{
-				int w1 = wait(NULL);
-				int w2 = wait(NULL);
-				if(w1 && w2) return;
+				int w1 = wait(NULL); // captures if and when child1 returns
+				int w2 = wait(NULL); // captures if and when child2 returns
+				if(w1 && w2) return; // if both have returned, then return to main()
 			}
-		}
+		}	
 	}
 }
 
@@ -219,6 +257,29 @@ void ExecuteNotPiped(struct Command *command)
 	}
 	else if(pid == 0)
 	{
+		if(command->stdin_redirect != "\0")
+		{
+			int fd0 = open(command->stdin_redirect, O_RDONLY, 0);
+			if(fd0 < 0)
+			{
+				perror("Cannot open input file");
+				exit(0);
+			}
+			dup2(fd0, 0);
+			close(fd0);
+		}
+
+		if(command->stdout_redirect != "\0")
+		{
+			int fd1 = creat(command->stdout_redirect, 0644);
+			if(fd1 < 0)
+			{
+				perror("Cannot open output file");
+				exit(0);
+			}
+			dup2(fd1, 1);
+			close(fd1);
+		}
 		execvp(command->sub_commands[0].argv[0], command->sub_commands[0].argv);
 	}
 	else
@@ -230,7 +291,7 @@ void ExecuteNotPiped(struct Command *command)
 		}
 		else
 		{
-			wait(pid);
+			wait(&pid);
 			return;
 		}
 	}
@@ -242,7 +303,9 @@ void CommandHandler(struct Command *command)
 	if (num_pipes > 0)
 	{
 		//printf("NOTE: execute piped\n");
-		ExecutePiped(command);
+		int i = 0;
+		for(i = 0; i < num_pipes; i++)
+			ExecutePiped(command, i);
 	}
 	else
 	{
@@ -252,13 +315,16 @@ void CommandHandler(struct Command *command)
 	return;
 }
 
-void ResetCommand(struct Command *command)
+void ResetCommandFields(struct Command *command)
 {
-	 
+	command->stdin_redirect = "\0";
+	command->stdout_redirect = "\0";
+	command->background = 0;
+	return;
 }
 
-int main(){	
-	
+int main()	
+{
 	struct Command command;
 	char s[200];
 	char *argv[10];
@@ -271,6 +337,7 @@ int main(){
 		ReadRedirectsAndBackground(&command);
 		//PrintCommand(&command);
 		CommandHandler(&command);
+		ResetCommandFields(&command);
 	}
 	return 0;
 }
